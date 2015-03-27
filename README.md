@@ -2,7 +2,7 @@
 
 端数になったカラー（CMYKとグレースケールのみ）を整数の近似値に丸めるIllustrator用スクリプト（jsx）。
 
-[図入りの解説](http://graphicartsunit.tumblr.com/)
+[図入りの解説](http://graphicartsunit.tumblr.com/post/114765168309/illustrator)
 
 -----
 
