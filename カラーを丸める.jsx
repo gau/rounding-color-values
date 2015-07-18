@@ -4,12 +4,12 @@ Copyright (c) 2015 Toshiyuki Takahashi
 Released under the MIT license
 http://opensource.org/licenses/mit-license.php
 http://www.graphicartsunit.com/
-ver. 0.5.0
+ver. 0.5.5
 */
 (function() {
 
 	var SCRIPT_TITLE = 'カラーを丸める';
-	var SCRIPT_VERSION = '0.5.0';
+	var SCRIPT_VERSION = '0.5.5';
 
 	// Settings
 	var settings = {
@@ -113,7 +113,7 @@ ver. 0.5.0
 			settings.roundingMethod = getSelectedIndex(thisObj.rdMethod);
 			settings.roundingType = getSelectedIndex(thisObj.rdType);
 			try {
-				roundColor();
+				mainProcess();
 			} catch(e) {
 				alert('エラーが発生しましたので処理を中止します\nエラー内容：' + e);
 			} finally {
@@ -136,6 +136,34 @@ ver. 0.5.0
 		alert('オブジェクトが選択されていません');
 	} else {
 		dialog.showDialog();
+	}
+
+	// Main process
+	function mainProcess() {
+		var targetitems = getTargetItems(app.activeDocument.selection);
+		for (var i = 0; i < targetitems.length; i++) {
+			roundColor(targetitems[i]);
+		}
+	}
+
+	function confirmItem(item) {
+		// if (item.stroked) return true;
+		return true
+	}
+
+	// Get target items
+	function getTargetItems(items) {
+		var targetItems = [];
+		for (var i = 0; i < items.length; i++) {
+			if (items[i].typename == 'PathItem' || items[i].typename == 'TextRange') {
+				if (confirmItem(items[i])) targetItems.push(items[i]);
+			} else if(items[i].typename == 'GroupItem' || items[i].typename == 'CompoundPathItem') {
+				targetItems = targetItems.concat(getTargetItems(items[i].pathItems));
+			} else if(items[i].typename == 'TextFrame') {
+				targetItems = targetItems.concat(getTargetItems(items[i].textRanges));
+			}
+		}
+		return targetItems;
 	}
 
 	// Round Number
@@ -189,27 +217,17 @@ ver. 0.5.0
 	}
 
 	// Main Process
-	function roundColor() {
-		var items = app.activeDocument.selection;
-		if (!items || items.length < 1) throw('オブジェクトが選択されていません');
-		for (var i = 0; i < items.length; i++) {
-			if (items[i].typename == 'GroupItem' || items[i].typename == 'SymbolItem') {
-				continue;
-			} else if(items[i].typename == 'TextFrame') {
-				// のちにテキストカラーに対応するための準備
-				continue;
+	function roundColor(item) {
+		// Round Stroke Color
+		if (settings.strokeColor) {
+			if (item.strokeColor.typename == 'CMYKColor' || item.strokeColor.typename == 'GrayColor') {
+				item.strokeColor = getRoundedColor(item.strokeColor);
 			}
-			// Round Stroke Color
-			if (settings.strokeColor) {
-				if (items[i].strokeColor.typename == 'CMYKColor' || items[i].strokeColor.typename == 'GrayColor') {
-					items[i].strokeColor = getRoundedColor(items[i].strokeColor);
-				}
-			}
-			// Round Fill Color
-			if (settings.fillColor) {
-				if (items[i].fillColor.typename == 'CMYKColor' || items[i].fillColor.typename == 'GrayColor') {
-					items[i].fillColor = getRoundedColor(items[i].fillColor);
-				}
+		}
+		// Round Fill Color
+		if (settings.fillColor) {
+			if (item.fillColor.typename == 'CMYKColor' || item.fillColor.typename == 'GrayColor') {
+				item.fillColor = getRoundedColor(item.fillColor);
 			}
 		}
 	}
