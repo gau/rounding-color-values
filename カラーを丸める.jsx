@@ -4,12 +4,12 @@ Copyright (c) 2015 Toshiyuki Takahashi
 Released under the MIT license
 http://opensource.org/licenses/mit-license.php
 http://www.graphicartsunit.com/
-ver. 0.5.5
+ver. 0.6.0
 */
 (function() {
 
 	var SCRIPT_TITLE = 'カラーを丸める';
-	var SCRIPT_VERSION = '0.5.5';
+	var SCRIPT_VERSION = '0.6.0';
 
 	// Settings
 	var settings = {
@@ -138,7 +138,7 @@ ver. 0.5.5
 		dialog.showDialog();
 	}
 
-	// Main process
+	// Main Process
 	function mainProcess() {
 		var targetitems = getTargetItems(app.activeDocument.selection);
 		for (var i = 0; i < targetitems.length; i++) {
@@ -146,21 +146,27 @@ ver. 0.5.5
 		}
 	}
 
+	// Confirm Item (not using)
 	function confirmItem(item) {
-		// if (item.stroked) return true;
-		return true
+		return true;
 	}
 
-	// Get target items
+	// Get Target Items
 	function getTargetItems(items) {
 		var targetItems = [];
-		for (var i = 0; i < items.length; i++) {
-			if (items[i].typename == 'PathItem' || items[i].typename == 'TextRange') {
-				if (confirmItem(items[i])) targetItems.push(items[i]);
-			} else if(items[i].typename == 'GroupItem' || items[i].typename == 'CompoundPathItem') {
-				targetItems = targetItems.concat(getTargetItems(items[i].pathItems));
-			} else if(items[i].typename == 'TextFrame') {
-				targetItems = targetItems.concat(getTargetItems(items[i].textRanges));
+		if (items.typename == 'TextRange') {
+			for (var i = 0; i < items.length; i++) {
+				if (confirmItem(items.characters[i])) targetItems.push(items.characters[i]);
+			}
+		} else {
+			for (var i = 0; i < items.length; i++) {
+				if (items[i].typename == 'PathItem' || items[i].typename == 'TextRange') {
+					if (confirmItem(items[i])) targetItems.push(items[i]);
+				} else if(items[i].typename == 'GroupItem' || items[i].typename == 'CompoundPathItem') {
+					targetItems = targetItems.concat(getTargetItems(items[i].pathItems));
+				} else if(items[i].typename == 'TextFrame') {
+					targetItems = targetItems.concat(getTargetItems(items[i].textRanges));
+				}
 			}
 		}
 		return targetItems;
@@ -197,7 +203,7 @@ ver. 0.5.5
 
 	// Get Rounded Color
 	function getRoundedColor(color) {
-		var nc;
+		var nc = color;
 		switch(color.typename) {
 			case 'CMYKColor' :
 				nc = new CMYKColor();
@@ -216,20 +222,28 @@ ver. 0.5.5
 		return nc;
 	}
 
-	// Main Process
+	// Round Color
 	function roundColor(item) {
-		// Round Stroke Color
+		var key = [];
 		if (settings.strokeColor) {
-			if (item.strokeColor.typename == 'CMYKColor' || item.strokeColor.typename == 'GrayColor') {
-				item.strokeColor = getRoundedColor(item.strokeColor);
+			if ((item.typename != 'TextRange' && item.strokeColor != 'NoColor' && item.stroked) || (item.typename == 'TextRange' && item.strokeColor != 'NoColor')) {
+				key.push('strokeColor');
 			}
 		}
-		// Round Fill Color
 		if (settings.fillColor) {
-			if (item.fillColor.typename == 'CMYKColor' || item.fillColor.typename == 'GrayColor') {
-				item.fillColor = getRoundedColor(item.fillColor);
+			if ((item.typename != 'TextRange' && item.fillColor != 'NoColor' && item.filled) || (item.typename == 'TextRange' && item.fillColor != 'NoColor')) {
+				key.push('fillColor');
+			}
+		}
+		for (var i = 0; i < key.length; i++) {
+			if (item[key[i]].typename == 'GradientColor') {
+				var gs = item[key[i]].gradient.gradientStops;
+				for (var gsi = 0; gsi < gs.length; gsi++) {
+					gs[gsi].color = getRoundedColor(gs[gsi].color);
+				}
+			} else if (item[key[i]].typename == 'CMYKColor' || item[key[i]].typename == 'GrayColor') {
+				item[key[i]] = getRoundedColor(item[key[i]]);
 			}
 		}
 	}
-
 }());
