@@ -4,12 +4,12 @@ Copyright (c) 2015 Toshiyuki Takahashi
 Released under the MIT license
 http://opensource.org/licenses/mit-license.php
 http://www.graphicartsunit.com/
-ver. 0.6.0
+ver. 0.6.1
 */
 (function() {
 
 	var SCRIPT_TITLE = 'カラーを丸める';
-	var SCRIPT_VERSION = '0.6.0';
+	var SCRIPT_VERSION = '0.6.1';
 
 	// Settings
 	var settings = {
@@ -162,7 +162,9 @@ ver. 0.6.0
 			for (var i = 0; i < items.length; i++) {
 				if (items[i].typename == 'PathItem' || items[i].typename == 'TextRange') {
 					if (confirmItem(items[i])) targetItems.push(items[i]);
-				} else if(items[i].typename == 'GroupItem' || items[i].typename == 'CompoundPathItem') {
+				} else if(items[i].typename == 'GroupItem') {
+					targetItems = targetItems.concat(getTargetItems(items[i].pageItems));
+				} else if(items[i].typename == 'CompoundPathItem') {
 					targetItems = targetItems.concat(getTargetItems(items[i].pathItems));
 				} else if(items[i].typename == 'TextFrame') {
 					targetItems = targetItems.concat(getTargetItems(items[i].textRanges));
